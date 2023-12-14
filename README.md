@@ -30,10 +30,10 @@ git clone https://github.com/rc-ucr/rocks.git && cd rocks
 Download the source tree of currently available rolls:
 
 ```bash
-./init.sh
+./init.sh  --release 7.2.0-UCR-maintenance
 ```
 
-Roll repositories are cloned into subdirectory  `src/roll`. Now bootstrap the core roll with:
+`7.2.0-UCR-maintenance` is the maintenance branch for Release 7-2-0-UCR. This release corresponds to CentOS 7.9.2009. Roll repositories are cloned into subdirectory  `src/roll`. Now bootstrap the core roll with:
 
 ```bash
 pushd src/roll/core
@@ -72,7 +72,7 @@ Comprehensive log files will be created in `/tmp` which are all worth an inspect
 [root@buildhost tmp]#
 ```
 
-Currently only the following rolls are supported: `core`, `base`, `kernel`, `ganglia` and `sge`. More may follow soon. After completion of the build the resulting iso-images can be found in their respective directories within `/root/rocks/src/roll`. Notice that both os rolls CentOS and Updates-CentOS-7.9.2009 are located in `/tmp/OSROLL`. The additional roll `rocks-installer-7-2.iso` in the `kernel` subdirectory is of no use in this context.
+Currently only the following rolls are supported: `core`, `base`, `kernel`, `ganglia` and `sge`. More may follow soon. After completion of the build the resulting iso-images can be found in their respective directories within `/root/rocks/src/roll`. Notice that both os rolls `CentOS` and `Updates-CentOS-7.9.2009` are located in `/tmp/OSROLL`. The additional roll `rocks-installer-7-2.iso` in the `kernel` subdirectory is of no use in this context.
 
 ### Create Roll Server
 
