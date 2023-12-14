@@ -4,7 +4,7 @@ Some remarks on how to build RC-UCR. Very brief and work-in-progress.
 
 ## Release 7-2-0-UCR
 
-This is the current release based on CentOS 7.9.2009 und available updates. It uses Linux kernel `3.10.0-1160.102.1.el7.x86_64`.
+This is the current release based on CentOS 7.9.2009 und available updates. It uses Linux kernel `3.10.0-1160.105.1.el7.x86_64`.
 
 ### Prepare Build Host
 
