@@ -18,7 +18,7 @@ Use net install image `CentOS-7-x86_64-NetInstall-2009.iso` and choose a mirror 
 
 This is my personal choice. You may add more, but if you add less then some of the build prerequisites may be missing and the build might fail. In any case, every RC-UCR build is significantly invasive to your build environment. Lots of RPMs will be installed and weird stuff is being executed. I recommend to use a virtualized build host (e.g. on VMware) and to create a snapshot after complete preparation of the build host.
 
-### Build Sequence
+### Automated Build Sequence
 
 This recipe largely follows the original [README](https://github.com/rc-ucr/rocks/blob/master/README) with some simplifications for building on pristine CentOS hosts. The resulting build inherits the Linux kernel version from the build host. Therefore, the newer the build host OS, the newer the RC-UCR kernel version. Log into the build host as `root`, clone the master repository and execute some shell commands:
 
@@ -73,6 +73,93 @@ Comprehensive log files will be created in `/tmp` which are all worth an inspect
 ```
 
 Currently only the following rolls are supported: `core`, `base`, `kernel`, `ganglia` and `sge`. More may follow soon. After completion of the build the resulting iso-images can be found in their respective directories within `/root/rocks/src/roll`. Notice that both os rolls `CentOS` and `Updates-CentOS-7.9.2009` are located in `/tmp/OSROLL`. The additional roll `rocks-installer-7-2.iso` in the `kernel` subdirectory is of no use in this context.
+
+### Manual Build Sequence
+
+This build sequence is essentially the same as the automated sequence but gives more control over each single build step. The following commands create the build environment and also set up a little fake cluster head node, including the MySQL database.
+
+```bash
+cd /root
+git clone https://github.com/rc-ucr/rocks.git && cd rocks
+./init.sh  --release 7.2.0-UCR-maintenance
+pushd src/roll/core
+./bootstrap0.sh < /dev/null 2>&1 | tee /tmp/bootstrap0.sh.out
+popd
+```
+
+Log out. Log back in, to make sure that newly installed `/etc/profile` scripts have been sourced. Closing and reopening the terminal is also sufficient. The next step creates and installs the `rocks-level` package.
+
+```bash
+/usr/sbin/setenforce 0
+pushd src/roll/rocksbuild
+make buildrpms 
+popd
+. /etc/profile.d/rocks-devel.sh
+```
+
+In the following steps the rolls `core`, `base`, and `kernel` are build, exactly in this order. Change to directory `/root/rocks/src/roll` and execute the following commands.
+
+```bash
+cd core
+./bootstrap.sh 2>&1 | tee /tmp/make-core-bootstrap.out
+make roll 2>&1 | tee /tmp/make-core-roll.out
+rocks add roll core-7.2.0-UCR.x86_64.disk1.iso
+rocks enable roll core
+cd ..
+```
+
+You may inspect via `rocks list roll` that the core roll is available and enabled. The next roll to be build is  `base`, which is somewhat special because it also creates the `CentOS-7.9.2009` and `Updates-CentOS-7.9.2009` rolls in `/tmp` directory.
+
+```bash
+cd base
+./bootstrap.sh 2>&1 | tee /tmp/make-base-bootstrap.out
+rocks add roll /tmp/OSROLL/CentOS-7.9.2009-*.iso
+rocks add roll /tmp/OSROLL/Updates-CentOS-7.9.2009-*.iso
+rocks enable roll CentOS Updates-CentOS-7.9.2009
+```
+
+Contintue with creating the base roll.
+
+```bash
+make roll 2>&1 | tee /tmp/make-base-roll.out
+rocks add roll base-7.2.0-UCR.x86_64.disk1.iso 
+rocks enable roll base
+cd ..
+```
+
+The third essential roll is `kernel`.
+
+```bash
+cd kernel
+./bootstrap.sh 2>&1 | tee /tmp/make-kernel-bootstrap.out
+make roll 2>&1 | tee /tmp/make-kernel-roll.out
+rocks add roll kernel-7.2.0-UCR.x86_64.disk1.iso
+rocks enable roll kernel
+```
+
+After this step the essential rolls are completed and its time to create a first Rocks distribution.
+
+```bash
+pushd /export/rocks/install
+rocks create distro
+popd
+source /etc/profile.d/rocks-binaries.sh
+source /etc/profile.d/java.sh
+source /etc/profile.d/modules.sh
+```
+
+Continue with all other optional rolls (currently `ganglia` and `sge`). The sequence is essentially the same for each roll. Replace `<rollname>` in the following command sequence with `ganglia` and `sge`, in a roll by roll manner.
+
+```bash
+cd <rollname>
+./bootstrap.sh 2>&1 | tee /tmp/make-<rollname>-bootstrap.out
+make roll 2>&1 | tee /tmp/make-<rollname>-roll.out
+rocks add roll <rollname>-*.iso
+rocks enable roll <rollname>
+cd ..
+```
+
+After this step all roll iso files are built and ready for upload to a roll server.
 
 ### Create Roll Server
 
